@@ -541,14 +541,14 @@
                 letter-spacing: 0.18em !important;
             }
             header h1 {
-                /* clamp: 화면이 좁을수록 자동으로 줄어듦 — 갤럭시/안드로이드 넘침 방지 */
-                font-size: clamp(0.85rem, 4.2vw, 1.45rem) !important;
-                letter-spacing: 0.01em !important;
-                line-height: 1.15;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 100%;
+                /* px 단위 clamp — rem은 Android 시스템 폰트 설정에 영향받아 rem 미사용 */
+                font-size: clamp(13px, 4vw, 23px) !important;
+                letter-spacing: 0 !important;
+                line-height: 1.15 !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 100% !important;
             }
             header p {
                 font-size: 0.58rem !important;
@@ -614,11 +614,38 @@
             100% { opacity: 0;    transform: translateY(-340px) scale(0); }
         }
 
+        /* ── 카드 뒷면 모바일 축소 — 195×265px 카드 안에 내용이 모두 들어오도록 ── */
+        @media (max-width: 640px) {
+            .card-back {
+                padding: 16px 13px !important;
+                gap: 7px !important;
+            }
+            .cb-label {
+                font-size: 0.55rem !important;
+                letter-spacing: 0.20em !important;
+            }
+            .cb-title {
+                font-size: 0.85rem !important;
+            }
+            .cb-role {
+                font-size: 0.74rem !important;
+                line-height: 1.48 !important;
+            }
+            .cb-role strong {
+                font-size: 0.84rem !important;
+            }
+            .cb-desc {
+                font-size: 0.65rem !important;
+                line-height: 1.4 !important;
+            }
+        }
+
         /* Extra small screens (Galaxy S/A 시리즈 포함 360px 이하) */
         @media (max-width: 390px) {
-            header h1 { font-size: clamp(0.78rem, 4.0vw, 1.2rem) !important; }
+            header h1 { font-size: clamp(11px, 3.5vw, 18px) !important; }
             main { height: 310px !important; }
             .portrait-card { width: 170px !important; height: 235px !important; }
+            .card-back { padding: 14px 11px !important; gap: 6px !important; }
             .icon-inner { width: 52px !important; height: 52px !important; }
         }
     </style>
@@ -651,7 +678,7 @@
             PERSONAL WORKBOOK SYSTEM
         </span>
         <h1 class="text-4xl md:text-5xl font-extrabold tracking-wide uppercase chrome-text"
-            style="font-size:clamp(13px,4vw,48px);letter-spacing:0.01em">
+            style="font-size:clamp(13px,4vw,48px)!important;letter-spacing:0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">
             Haebom's Work Log
         </h1>
         <div class="flex items-center justify-center gap-3 mt-3">
@@ -736,11 +763,10 @@
                     <p class="cb-role">브랜드와 공간의 가치를 설계하는<br><strong style="font-size:1.08rem;color:#e2d9ff;letter-spacing:0.03em;">공간 브랜딩 디렉터</strong></p>
                     <div class="cb-divider"></div>
                     <p class="cb-desc">주거·상업공간 브랜딩을<br>기획합니다.</p>
-                    <span class="cb-hint">↑ Click</span>
                 </div>
             </div>
             <!-- 카드 프레임 외부 Click 라벨 (항상 보임) -->
-            <div class="click-badge">↑ &nbsp;Click</div>
+            <div class="click-badge">▲ &nbsp;Click</div>
         </div>
 
         <!-- ── LEFT SIDE: Phone / Email / Document ── -->
