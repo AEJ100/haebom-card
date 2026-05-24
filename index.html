@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Jjini's Daily Journal</title>
+    <title>해봄의 기록실</title>
 
     <!-- Open Graph / Link Preview (절대 URL 필수) -->
     <meta property="og:type"         content="website">
     <meta property="og:url"          content="https://aej100.github.io/haebom-card/">
-    <meta property="og:title"        content="Jjini's Daily Journal">
-    <meta property="og:description"  content="A dreamy mobile business card and creative archive by Haebom.">
+    <meta property="og:title"        content="해봄의 기록실">
+    <meta property="og:description"  content="브랜드와 공간의 가치를 설계하는 기록">
     <meta property="og:image"        content="https://aej100.github.io/haebom-card/jjini-portrait.png">
     <meta property="og:image:width"  content="800">
     <meta property="og:image:height" content="800">
     <meta name="twitter:card"        content="summary_large_image">
-    <meta name="twitter:title"       content="Jjini's Daily Journal">
-    <meta name="twitter:description" content="A dreamy mobile business card and creative archive by Haebom.">
+    <meta name="twitter:title"       content="해봄의 기록실">
+    <meta name="twitter:description" content="브랜드와 공간의 가치를 설계하는 기록">
     <meta name="twitter:image"       content="https://aej100.github.io/haebom-card/jjini-portrait.png">
-    <meta name="description"         content="A dreamy mobile business card and creative archive by Haebom.">
+    <meta name="description"         content="브랜드와 공간의 가치를 설계하는 기록">
     <link rel="icon" type="image/png" href="jjini-portrait.png">
 
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap" rel="stylesheet">
@@ -858,8 +858,35 @@
             cardBack.style.display = 'flex';
         }
 
+        // ── 카드 플립 효과음 (Web Audio API 생성 whoosh) ──────────────────
+        function playFlipSound() {
+            try {
+                const sh = window._sharedAC;
+                const ac   = (sh && sh.state === 'running') ? sh : new (window.AudioContext || window.webkitAudioContext)();
+                const dest = (ac === window._sharedAC && window._sharedMaster) ? window._sharedMaster : ac.destination;
+                const dur  = 0.20;
+                const buf  = ac.createBuffer(1, Math.ceil(ac.sampleRate * dur), ac.sampleRate);
+                const d    = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++)
+                    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 0.75);
+                const src = ac.createBufferSource(); src.buffer = buf;
+                const bp  = ac.createBiquadFilter();
+                bp.type   = 'bandpass';
+                bp.frequency.setValueAtTime(350, ac.currentTime);
+                bp.frequency.exponentialRampToValueAtTime(4200, ac.currentTime + 0.14);
+                bp.Q.value = 0.55;
+                const g = ac.createGain();
+                g.gain.setValueAtTime(0.32, ac.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+                src.connect(bp); bp.connect(g); g.connect(dest);
+                src.start(); src.stop(ac.currentTime + dur + 0.05);
+                if (ac !== window._sharedAC) setTimeout(() => { try { ac.close(); } catch(e){} }, 600);
+            } catch(e) {}
+        }
+
         // 핵심 플립: 빠르게 접기 → 콘텐츠 교체 → 천천히 펼치기 (빠르게→천천히)
         function doFlip() {
+            playFlipSound();  // 효과음
             // 홀로그래픽 빛 + 글로우 링 시작
             portraitCard.classList.add('is-flipping');
             setTimeout(() => portraitCard.classList.remove('is-flipping'), 760);
@@ -1102,9 +1129,9 @@
             document.querySelectorAll('.icon-rm-white').forEach(img => process(img, true));
         })();
 
-        // ── Trendy Beat Music (Web Audio API — 저작권 없는 생성 음악) ──────────
-        // 124 BPM 일렉트로닉 팝: 킥드럼 + 스네어 + 하이햇 + 신스멜로디 + 베이스
-        // Am–F–C–G 진행 (K-pop/EDM에서 자주 쓰이는 코드)
+        // ── Smooth Jazz Music (Web Audio API — 저작권 없는 생성 음악) ──────────
+        // 92 BPM 스윙 재즈: 피아노 + 워킹베이스 + 라이드심벌 + 브러시스네어
+        // Am7–Dm7–G7–Cmaj7 재즈 진행
         (function() {
             const AC = window.AudioContext || window.webkitAudioContext;
             if (!AC) return;
@@ -1114,118 +1141,139 @@
             let nextBar = 0, barIdx = 0;
             let autoStarted = false;
 
-            const BPM  = 124;
-            const beat = 60 / BPM;        // ~0.484s
-            const s16  = beat / 4;        // 16th note ~0.121s
+            const BPM  = 92;
+            const beat = 60 / BPM;   // ~0.652s
+            const sw   = beat * 2/3; // swing 8th 장박
+            const sh   = beat * 1/3; // swing 8th 단박
 
             /* ── 악기 ── */
-            function kick(t) {
-                const o = ctx.createOscillator(), g = ctx.createGain();
-                o.frequency.setValueAtTime(210, t);
-                o.frequency.exponentialRampToValueAtTime(36, t + 0.09);
-                g.gain.setValueAtTime(1.1, t);
-                g.gain.exponentialRampToValueAtTime(0.001, t + 0.30);
-                o.connect(g); g.connect(master);
-                o.start(t); o.stop(t + 0.35);
+            // 피아노: 배음 3개로 어쿠스틱 느낌
+            function piano(freq, t, dur, vol) {
+                if (!freq || !ctx) return;
+                vol = vol || 0.10;
+                [1, 2, 3].forEach((h, i) => {
+                    const o = ctx.createOscillator(), g = ctx.createGain();
+                    o.type = 'sine'; o.frequency.value = freq * h;
+                    const hv = [vol, vol*0.30, vol*0.12][i];
+                    g.gain.setValueAtTime(0, t);
+                    g.gain.linearRampToValueAtTime(hv, t + 0.005);
+                    g.gain.exponentialRampToValueAtTime(hv * 0.45, t + 0.10);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                    o.connect(g); g.connect(master);
+                    o.start(t); o.stop(t + dur + 0.05);
+                });
             }
 
-            function snare(t) {
-                const buf = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
-                const d = buf.getChannelData(0);
-                for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-                const src = ctx.createBufferSource(); src.buffer = buf;
-                const bp = ctx.createBiquadFilter();
-                bp.type = 'bandpass'; bp.frequency.value = 1600; bp.Q.value = 0.8;
-                const g = ctx.createGain();
-                g.gain.setValueAtTime(0.55, t);
-                g.gain.exponentialRampToValueAtTime(0.001, t + 0.20);
-                const o = ctx.createOscillator(), og = ctx.createGain();
-                o.frequency.value = 195;
-                og.gain.setValueAtTime(0.35, t);
-                og.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
-                src.connect(bp); bp.connect(g); g.connect(master);
-                o.connect(og); og.connect(master);
-                src.start(t); src.stop(t + 0.22);
-                o.start(t);   o.stop(t + 0.09);
-            }
-
-            function hihat(t, vol, open) {
-                const dur = open ? 0.14 : 0.04;
-                const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
-                const d = buf.getChannelData(0);
-                for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-                const src = ctx.createBufferSource(); src.buffer = buf;
-                const hp = ctx.createBiquadFilter();
-                hp.type = 'highpass'; hp.frequency.value = 9500;
-                const g = ctx.createGain();
-                g.gain.setValueAtTime(vol, t);
-                g.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.01);
-                src.connect(hp); hp.connect(g); g.connect(master);
-                src.start(t); src.stop(t + dur + 0.02);
-            }
-
-            function bassNote(freq, t, dur) {
+            // 워킹 베이스
+            function walkBass(freq, t, dur) {
+                if (!ctx) return;
                 const o = ctx.createOscillator(), g = ctx.createGain();
                 o.type = 'sine'; o.frequency.value = freq;
                 g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(0.50, t + 0.015);
-                g.gain.setValueAtTime(0.45, t + dur - 0.06);
+                g.gain.linearRampToValueAtTime(0.44, t + 0.012);
+                g.gain.setValueAtTime(0.38, t + dur * 0.75);
                 g.gain.linearRampToValueAtTime(0, t + dur);
                 o.connect(g); g.connect(master);
                 o.start(t); o.stop(t + dur + 0.05);
             }
 
-            function synthNote(freq, t, dur) {
-                if (!freq) return;
-                const o1 = ctx.createOscillator();
-                const o2 = ctx.createOscillator();
-                const flt = ctx.createBiquadFilter();
+            // 라이드 심벌 (재즈 특유의 메탈릭 shimmer)
+            function ride(t, vol) {
+                if (!ctx) return;
+                const dur = 0.10;
+                const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+                const src = ctx.createBufferSource(); src.buffer = buf;
+                const bp = ctx.createBiquadFilter();
+                bp.type = 'bandpass'; bp.frequency.value = 7000; bp.Q.value = 3;
+                const hp = ctx.createBiquadFilter();
+                hp.type = 'highpass'; hp.frequency.value = 5500;
                 const g = ctx.createGain();
-                o1.type = 'sawtooth'; o1.frequency.value = freq;
-                o2.type = 'sawtooth'; o2.frequency.value = freq * 1.007;
-                flt.type = 'lowpass'; flt.frequency.value = 2400; flt.Q.value = 1.8;
-                g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(0.13, t + 0.018);
-                g.gain.setValueAtTime(0.11, t + dur - 0.04);
-                g.gain.linearRampToValueAtTime(0, t + dur);
-                o1.connect(flt); o2.connect(flt); flt.connect(g); g.connect(master);
-                o1.start(t); o2.start(t);
-                o1.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
+                g.gain.setValueAtTime(vol || 0.13, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + dur * 2.5);
+                src.connect(bp); bp.connect(hp); hp.connect(g); g.connect(master);
+                src.start(t); src.stop(t + dur * 2.5 + 0.01);
             }
 
-            /* ── 패턴 (16분음표 기준, 1=재생 0=쉼) ── */
-            const kPat = [1,0,0,0, 0,0,0,0, 1,0,1,0, 0,0,0,0]; // kick
-            const sPat = [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0]; // snare
-            const hPat = [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0]; // closed hh
-            const oPat = [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,1]; // open hh
+            // 브러시 스네어 (부드러운 재즈 드럼)
+            function brushSnare(t) {
+                if (!ctx) return;
+                const dur = 0.14;
+                const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++)
+                    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/d.length, 1.6);
+                const src = ctx.createBufferSource(); src.buffer = buf;
+                const bp = ctx.createBiquadFilter();
+                bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.6;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.20, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                src.connect(bp); bp.connect(g); g.connect(master);
+                src.start(t); src.stop(t + dur + 0.01);
+            }
 
-            // 멜로디 — Am F C G 코드별 (16스텝)
-            // 주파수 0 = 쉼
-            const mel = [
-                // Bar 1 — Am
-                [659.25,0, 523.25,0, 440.00,659.25,0,0, 392.00,0,440.00,0, 523.25,0,659.25,0],
-                // Bar 2 — F
-                [587.33,0, 440.00,0, 349.23,0,440.00,523.25, 587.33,0,523.25,0, 440.00,0,392.00,0],
-                // Bar 3 — C
-                [659.25,0, 783.99,659.25, 523.25,0,392.00,0, 440.00,523.25,659.25,0, 523.25,0,440.00,0],
-                // Bar 4 — G
-                [392.00,440.00,392.00,0, 587.33,0,659.25,587.33, 0,523.25,0,440.00, 392.00,0,329.63,0],
+            // 라이트 킥 (재즈는 킥이 가볍고 낮음)
+            function lightKick(t) {
+                if (!ctx) return;
+                const o = ctx.createOscillator(), g = ctx.createGain();
+                o.frequency.setValueAtTime(115, t);
+                o.frequency.exponentialRampToValueAtTime(42, t + 0.07);
+                g.gain.setValueAtTime(0.48, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.20);
+                o.connect(g); g.connect(master);
+                o.start(t); o.stop(t + 0.24);
+            }
+
+            /* ── 코드 & 멜로디 ── */
+            // 워킹 베이스: 코드별 4 quarter notes
+            const walkBassNotes = [
+                [110.00, 130.81, 164.81, 196.00],  // Am7: A2 C3 E3 G3
+                [146.83, 174.61, 220.00, 261.63],  // Dm7: D3 F3 A3 C4
+                [98.00,  123.47, 146.83, 174.61],  // G7:  G2 B2 D3 F3
+                [130.81, 164.81, 196.00, 246.94],  // Cmaj7: C3 E3 G3 B3
             ];
-            // 베이스 루트음 (bar당 1음, Hz)
-            const bFreq = [55.00, 43.65, 65.41, 49.00]; // A1 F1 C2 G1
+
+            // 피아노 멜로디: 스윙 8분음표 8개 / bar (0=쉼)
+            const mel = [
+                [440.00, 0,      523.25, 440.00, 0,      587.33, 0,      523.25], // Am7
+                [587.33, 622.25, 659.25, 0,      587.33, 523.25, 0,      440.00], // Dm7
+                [392.00, 0,      440.00, 523.25, 587.33, 622.25, 587.33, 0     ], // G7
+                [523.25, 0,      587.33, 0,      523.25, 440.00, 392.00, 0     ], // Cmaj7
+            ];
 
             function schedBar(t) {
                 const b = barIdx % 4;
                 const barDur = beat * 4;
-                for (let i = 0; i < 16; i++) {
-                    const st = t + i * s16;
-                    if (kPat[i]) kick(st);
-                    if (sPat[i]) snare(st);
-                    if (hPat[i]) hihat(st, 0.18, false);
-                    if (oPat[i]) hihat(st, 0.24, true);
-                    if (mel[b][i]) synthNote(mel[b][i], st, s16 * 0.80);
+
+                // 워킹 베이스 (4 quarter notes)
+                walkBassNotes[b].forEach((f, i) => walkBass(f, t + i * beat, beat * 0.88));
+
+                // 라이드 심벌 (스윙 8분음표)
+                for (let i = 0; i < 4; i++) {
+                    ride(t + i * beat,      0.15); // 강박
+                    ride(t + i * beat + sw, 0.09); // 약박 (스윙)
                 }
-                bassNote(bFreq[b], t, barDur * 0.94);
+
+                // 킥 (1, 3박)
+                lightKick(t);
+                lightKick(t + beat * 2);
+
+                // 브러시 스네어 (2, 4박)
+                brushSnare(t + beat);
+                brushSnare(t + beat * 3);
+
+                // 피아노 멜로디 (스윙 8분음표)
+                mel[b].forEach((freq, i) => {
+                    if (!freq) return;
+                    const beatIdx = Math.floor(i / 2);
+                    const isUp    = i % 2 === 1;
+                    const st  = t + beatIdx * beat + (isUp ? sw : 0);
+                    const dur = (isUp ? sh : sw) * 0.82;
+                    piano(freq, st, dur);
+                });
+
                 barIdx++;
             }
 
