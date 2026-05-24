@@ -539,7 +539,7 @@
                 box-sizing: border-box;
             }
             header span.text-xs {
-                font-size: 0.58rem !important;
+                font-size: 0.70rem !important;
                 letter-spacing: 0.18em !important;
             }
             header h1 {
@@ -553,7 +553,7 @@
                 max-width: 100% !important;
             }
             header p {
-                font-size: 0.58rem !important;
+                font-size: 0.68rem !important;
                 letter-spacing: 0.18em !important;
             }
 
@@ -620,8 +620,15 @@
         @media (max-width: 640px) {
             .card-back {
                 padding: 16px 13px 20px !important;
-                gap: 6px !important;
+                gap: 4px !important;
                 justify-content: flex-start !important;
+            }
+            /* 스페이서 — flex:1로 늘어나 cb-role을 카드 수직 중앙에 배치 */
+            .cb-divider-spacer {
+                flex: 1 !important;
+                min-height: 0 !important;
+                height: auto !important;
+                background: none !important;
             }
             .cb-label {
                 font-size: 0.62rem !important;
@@ -640,7 +647,7 @@
             .cb-desc {
                 font-size: 0.72rem !important;
                 line-height: 1.45 !important;
-                margin-top: auto !important;
+                margin-top: 0 !important;
             }
         }
 
@@ -682,7 +689,7 @@
             PERSONAL WORKBOOK SYSTEM
         </span>
         <h1 class="text-4xl md:text-5xl font-extrabold tracking-wide uppercase chrome-text"
-            style="font-size:clamp(13px,4vw,48px)!important;letter-spacing:0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">
+            style="font-size:clamp(16px,5.5vw,48px)!important;letter-spacing:0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">
             Haebom's Work Log
         </h1>
         <div class="flex items-center justify-center gap-3 mt-3">
@@ -763,9 +770,9 @@
                     <span class="cb-label">About Me</span>
                     <div class="cb-divider"></div>
                     <span class="cb-title">해봄</span>
-                    <div class="cb-divider"></div>
+                    <div class="cb-divider cb-divider-spacer"></div>
                     <p class="cb-role">브랜드와 공간의 가치를 설계하는<br><strong style="font-size:1.08rem;color:#e2d9ff;letter-spacing:0.03em;">마케팅 & 공간 브랜딩 디렉터</strong></p>
-                    <div class="cb-divider"></div>
+                    <div class="cb-divider cb-divider-spacer"></div>
                     <p class="cb-desc">공간의 콘셉트부터 브랜딩,<br>마케팅 흐름까지 함께 기획합니다.</p>
                 </div>
             </div>
@@ -1381,6 +1388,29 @@
                 playing ? stopMusic() : startMusic();
             });
             document.body.appendChild(btn);
+
+            // ── 음표 버튼 위치 조정 — 모바일: ▲CLICK 아래 중앙 / PC: 우측하단 고정 ──
+            function positionMusicBtn() {
+                if (window.innerWidth > 640) {
+                    Object.assign(btn.style, {
+                        position:'fixed', bottom:'22px', right:'22px',
+                        top:'auto', left:'auto', transform:'none'
+                    });
+                    return;
+                }
+                const badge = document.querySelector('.click-badge');
+                if (!badge) return;
+                const r = badge.getBoundingClientRect();
+                if (!r.height) return;
+                Object.assign(btn.style, {
+                    position:'fixed',
+                    top: (r.bottom + 14) + 'px',
+                    left:'50%', transform:'translateX(-50%)',
+                    bottom:'auto', right:'auto'
+                });
+            }
+            requestAnimationFrame(positionMusicBtn);
+            window.addEventListener('resize', positionMusicBtn);
 
             // ── 자동 재생 전략 ────────────────────────────────────────────────
             // PC: 첫 마우스 클릭/키 입력 시 즉시 시작 (별도 🎵 버튼 불필요)
