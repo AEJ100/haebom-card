@@ -1342,6 +1342,10 @@
                     master = ctx.createGain();
                     master.gain.value = 0.46;
                     master.connect(ctx.destination);
+                    // OS가 오디오 중단 (전화 수신, 무음 전환 등) → 음악 자동 정지
+                    ctx.addEventListener('statechange', () => {
+                        if (ctx.state === 'suspended' && playing) stopMusic();
+                    });
                 }
             }
 
@@ -1433,19 +1437,29 @@
                 startMusic();
             }
 
-            // 모든 환경 동일 적용:
-            // - iOS: 하드웨어 무음 스위치 → OS가 AudioContext 출력 차단 (자동재생해도 무음)
-            // - Android (Samsung): 무음·진동 모드 → OS가 미디어 볼륨 0 처리 → 자동재생해도 무음
-            // - PC: 즉시 재생
+            // 자동재생 + 무음/진동 감지:
+            // ctx.resume() 후 200ms 뒤에도 'running' 유지 → OS가 오디오 허용 (소리 모드) → 자동재생
+            // ctx.resume() 후 'suspended' 복귀 → OS가 오디오 포커스 거부 (무음/진동) → 버튼 대기
+            // iOS: 하드웨어 무음 스위치 → OS가 AudioContext 출력 자동 차단
+            // Android Samsung 일부: 무음/진동 → OS가 오디오 포커스 거부 → suspended 유지
+            function tryAutoStart() {
+                if (autoStarted) return;
+                try {
+                    initCtx();
+                    ctx.resume().then(() => {
+                        setTimeout(() => {
+                            if (ctx.state === 'running' && !autoStarted) {
+                                onFirstInteraction();
+                            }
+                        }, 200);
+                    }).catch(() => {});
+                } catch(e) {}
+            }
+
             ['mousedown', 'touchstart', 'keydown'].forEach(ev =>
-                document.addEventListener(ev, onFirstInteraction, { once: true, passive: true })
+                document.addEventListener(ev, tryAutoStart, { once: true, passive: true })
             );
-            try {
-                initCtx();
-                ctx.resume().then(() => {
-                    if (ctx.state === 'running' && !autoStarted) onFirstInteraction();
-                }).catch(() => {});
-            } catch(e) {}
+            tryAutoStart();
         })();
     </script>
 </body>
