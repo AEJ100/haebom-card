@@ -534,6 +534,7 @@
             /* Header */
             header {
                 padding: 0 8px !important;
+                margin-top: 20px !important;
                 margin-bottom: 0 !important;
                 width: 100%;
                 box-sizing: border-box;
@@ -635,14 +636,17 @@
                 letter-spacing: 0.22em !important;
             }
             .cb-title {
-                font-size: 0.95rem !important;
+                font-size: 1.10rem !important;
             }
             .cb-role {
-                font-size: 0.82rem !important;
-                line-height: 1.52 !important;
+                font-size: 0.68rem !important;
+                line-height: 1.55 !important;
             }
             .cb-role strong {
-                font-size: 0.92rem !important;
+                font-size: 1.02rem !important;
+                color: #d8b4fe !important;
+                letter-spacing: 0.04em !important;
+                font-weight: 800 !important;
             }
             .cb-desc {
                 font-size: 0.72rem !important;
@@ -1405,8 +1409,8 @@
                 Object.assign(btn.style, {
                     position:'fixed',
                     top: (r.bottom + 14) + 'px',
-                    left:'50%', transform:'translateX(-50%)',
-                    bottom:'auto', right:'auto'
+                    right:'22px', left:'auto', transform:'none',
+                    bottom:'auto'
                 });
             }
             requestAnimationFrame(positionMusicBtn);
