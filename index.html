@@ -394,7 +394,7 @@
         }
         .click-badge {
             position: absolute;
-            bottom: -40px;
+            bottom: -20px;
             left: 50%;
             transform: translateX(-50%);
             font-family: 'Orbitron', sans-serif;
@@ -538,9 +538,14 @@
                 letter-spacing: 0.18em !important;
             }
             header h1 {
-                font-size: 1.45rem !important;
-                letter-spacing: 0.01em !important;
-                line-height: 1.1;
+                /* clamp: 화면이 좁을수록 자동으로 줄어듦 — 갤럭시 넘침 방지 */
+                font-size: clamp(0.92rem, 4.5vw, 1.45rem) !important;
+                letter-spacing: 0 !important;
+                line-height: 1.15;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
             }
             header p {
                 font-size: 0.58rem !important;
@@ -564,8 +569,13 @@
             /* Orbit rings — hide on mobile */
             .orbit-ring { display: none; }
 
-            /* Bubbles — reduce size */
-            .bubble { width: 24px !important; height: 24px !important; opacity: 0.5; }
+            /* Bubbles — 모바일: px 기반으로 bottom 고정, overflow 전에 페이드 */
+            .bubble {
+                width: 24px !important;
+                height: 24px !important;
+                top: 100% !important;   /* 컨테이너 맨 아래에서 시작 */
+                animation: floatMobile 13s ease-in-out infinite !important;
+            }
 
             /* Icons — reposition to sit at edges, fully visible */
             #icon-tel     { left: 4px !important;  right: auto !important; top: 6% !important;    bottom: auto !important; }
@@ -590,6 +600,15 @@
                 padding: 0 16px;
             }
             footer p { display: none; }
+        }
+
+        /* 모바일 버블: main 높이(340px) 안에서만 이동, top 도달 전 완전 페이드 */
+        @keyframes floatMobile {
+            0%   { transform: translateY(10px)   scale(0.5); opacity: 0;    }
+            9%   { opacity: 0.55; }
+            55%  { opacity: 0.55; transform: translateY(-210px) scale(0.9) rotate(18deg); }
+            78%  { opacity: 0;    transform: translateY(-295px) scale(0.35) rotate(32deg); }
+            100% { opacity: 0;    transform: translateY(-340px) scale(0); }
         }
 
         /* Extra small screens (iPhone SE, narrow phones) */
@@ -1081,6 +1100,129 @@
             document.querySelectorAll('.deco-img-invert').forEach(img => process(img, true));
             // Icon images with white/gray background — strip white, show silver only
             document.querySelectorAll('.icon-rm-white').forEach(img => process(img, true));
+        })();
+
+        // ── Ambient Space Music (Web Audio API — 코드로 생성, 저작권 없음) ──────
+        // 펜타토닉 스케일 기반 드리미 앰비언트 음악 + 리버브
+        (function() {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+
+            let ctx = null, master = null, reverb = null;
+            let playing = false, noteTimer = null;
+
+            // C장조 펜타토닉 (항상 조화롭게 들림)
+            const scale = [130.81, 146.83, 164.81, 196.00, 220.00,
+                           261.63, 293.66, 329.63, 392.00, 440.00,
+                           523.25, 587.33, 659.25];
+
+            function makeReverb(ac, secs) {
+                const len = ac.sampleRate * secs;
+                const buf = ac.createBuffer(2, len, ac.sampleRate);
+                for (let c = 0; c < 2; c++) {
+                    const d = buf.getChannelData(c);
+                    for (let i = 0; i < len; i++)
+                        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
+                }
+                const conv = ac.createConvolver();
+                conv.buffer = buf;
+                return conv;
+            }
+
+            function tone(freq, vol, dur, type) {
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type || 'sine';
+                osc.frequency.value = freq;
+                const t = ctx.currentTime;
+                gain.gain.setValueAtTime(0, t);
+                gain.gain.linearRampToValueAtTime(vol, t + 1.2);
+                gain.gain.setValueAtTime(vol, t + dur - 1.5);
+                gain.gain.linearRampToValueAtTime(0, t + dur);
+                osc.connect(gain);
+                gain.connect(reverb);
+                gain.connect(master);
+                osc.start(t);
+                osc.stop(t + dur + 0.2);
+            }
+
+            function scheduleNext() {
+                if (!playing) return;
+                const freq = scale[Math.floor(Math.random() * scale.length)];
+                const dur  = 5 + Math.random() * 6;
+                tone(freq,        0.07, dur);
+                tone(freq / 2,    0.05, dur * 1.4);
+                if (Math.random() > 0.45)
+                    tone(freq * 1.5, 0.04, dur * 0.8);
+                noteTimer = setTimeout(scheduleNext, (2 + Math.random() * 3) * 1000);
+            }
+
+            function start() {
+                ctx    = new AC();
+                master = ctx.createGain();
+                master.gain.value = 0.32;
+                master.connect(ctx.destination);
+                reverb = makeReverb(ctx, 4.5);
+                reverb.connect(master);
+                playing = true;
+                // 저음 드론 (우주적 분위기)
+                tone(65.41,  0.055, 99999, 'sine');
+                tone(130.81, 0.030, 99999, 'sine');
+                scheduleNext();
+            }
+
+            function stop() {
+                playing = false;
+                clearTimeout(noteTimer);
+                if (master && ctx) {
+                    master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.9);
+                    setTimeout(() => { try { ctx.close(); } catch(e){} ctx = null; }, 1000);
+                }
+            }
+
+            // ── 음악 토글 버튼 ────────────────────────────────────────────────
+            const btn = document.createElement('div');
+            btn.id = 'music-btn';
+            btn.setAttribute('role', 'button');
+            btn.setAttribute('aria-label', '음악 켜기/끄기');
+            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17">
+                <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/>
+            </svg>`;
+            Object.assign(btn.style, {
+                position: 'fixed', bottom: '22px', right: '22px',
+                width: '44px', height: '44px', borderRadius: '50%',
+                border: '1.5px solid rgba(139,92,246,0.40)',
+                background: 'rgba(8,3,20,0.85)',
+                color: 'rgba(139,92,246,0.55)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', zIndex: '9998',
+                backdropFilter: 'blur(14px)',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 14px rgba(0,0,0,0.5)',
+                userSelect: 'none',
+            });
+            // 호버 효과
+            btn.addEventListener('mouseenter', () => {
+                if (!playing) btn.style.borderColor = 'rgba(168,85,247,0.6)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                if (!playing) btn.style.borderColor = 'rgba(139,92,246,0.40)';
+            });
+            btn.addEventListener('click', () => {
+                if (playing) {
+                    stop();
+                    btn.style.color      = 'rgba(139,92,246,0.55)';
+                    btn.style.borderColor= 'rgba(139,92,246,0.40)';
+                    btn.style.boxShadow  = '0 2px 14px rgba(0,0,0,0.5)';
+                } else {
+                    start();
+                    btn.style.color      = 'rgba(196,132,252,1)';
+                    btn.style.borderColor= 'rgba(168,85,247,0.85)';
+                    btn.style.boxShadow  = '0 0 20px rgba(168,85,247,0.6), 0 2px 14px rgba(0,0,0,0.5)';
+                }
+            });
+            document.body.appendChild(btn);
         })();
     </script>
 </body>
