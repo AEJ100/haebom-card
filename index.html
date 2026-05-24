@@ -559,9 +559,9 @@
                 letter-spacing: 0.18em !important;
             }
 
-            /* Main scene — clip orbit decos, keep compact */
+            /* Main scene — overflow visible: 데코아이콘·빛번짐·버블이 자연스럽게 퍼짐 */
             main {
-                overflow: hidden;
+                overflow: visible;
                 height: 340px !important;
                 max-width: 100vw !important;
                 flex-shrink: 0;
@@ -624,6 +624,7 @@
                 padding: 16px 13px 20px !important;
                 gap: 4px !important;
                 justify-content: flex-start !important;
+                border: none !important;
             }
             /* 스페이서 — flex:1로 늘어나 cb-role을 카드 수직 중앙에 배치 */
             .cb-divider-spacer {
@@ -1429,19 +1430,20 @@
                 startMusic();
             }
 
-            // PC / iOS / Android 소리 모드 — 첫 번째 사용자 동작 시 자동 시작
-            // (Android 진동/무음 → 미디어 볼륨 0이면 들리지 않음, 수동 버튼으로 재시작 가능)
-            ['mousedown', 'touchstart', 'keydown'].forEach(ev =>
-                document.addEventListener(ev, onFirstInteraction, { once: true, passive: true })
-            );
-
-            // 페이지 로드 즉시 시도 (벨소리·소리 모드에서 바로 성공)
-            try {
-                initCtx();
-                ctx.resume().then(() => {
-                    if (ctx.state === 'running' && !autoStarted) onFirstInteraction();
-                }).catch(() => {});
-            } catch(e) {}
+            // Android: 진동/무음 구분 불가 → 🎵 버튼 수동 전용
+            // PC / iOS: 첫 번째 사용자 동작 시 자동 시작
+            const isAndroid = /android/i.test(navigator.userAgent);
+            if (!isAndroid) {
+                ['mousedown', 'touchstart', 'keydown'].forEach(ev =>
+                    document.addEventListener(ev, onFirstInteraction, { once: true, passive: true })
+                );
+                try {
+                    initCtx();
+                    ctx.resume().then(() => {
+                        if (ctx.state === 'running' && !autoStarted) onFirstInteraction();
+                    }).catch(() => {});
+                } catch(e) {}
+            }
         })();
     </script>
 </body>
