@@ -1433,22 +1433,19 @@
                 startMusic();
             }
 
-            // Android / Samsung 감지: 일반 모드(Android 포함) + 데스크톱 모드(SamsungBrowser만 포함)
-            // → 진동/무음 구분 불가 → 🎵 버튼 수동 전용
-            // PC / iOS: 첫 번째 사용자 동작 시 자동 시작
-            const ua = navigator.userAgent;
-            const isAndroid = /(android|SamsungBrowser)/i.test(ua);
-            if (!isAndroid) {
-                ['mousedown', 'touchstart', 'keydown'].forEach(ev =>
-                    document.addEventListener(ev, onFirstInteraction, { once: true, passive: true })
-                );
-                try {
-                    initCtx();
-                    ctx.resume().then(() => {
-                        if (ctx.state === 'running' && !autoStarted) onFirstInteraction();
-                    }).catch(() => {});
-                } catch(e) {}
-            }
+            // 모든 환경 동일 적용:
+            // - iOS: 하드웨어 무음 스위치 → OS가 AudioContext 출력 차단 (자동재생해도 무음)
+            // - Android (Samsung): 무음·진동 모드 → OS가 미디어 볼륨 0 처리 → 자동재생해도 무음
+            // - PC: 즉시 재생
+            ['mousedown', 'touchstart', 'keydown'].forEach(ev =>
+                document.addEventListener(ev, onFirstInteraction, { once: true, passive: true })
+            );
+            try {
+                initCtx();
+                ctx.resume().then(() => {
+                    if (ctx.state === 'running' && !autoStarted) onFirstInteraction();
+                }).catch(() => {});
+            } catch(e) {}
         })();
     </script>
 </body>
