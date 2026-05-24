@@ -460,6 +460,7 @@
             border: none;
             pointer-events: none;
             z-index: 60;
+            opacity: 0;            /* 기본 투명 — 플립 애니메이션 중에만 나타남 */
             opacity: 0;
             background: radial-gradient(ellipse at center,
                 rgba(168, 85, 247, 0.72)  0%,
@@ -631,25 +632,26 @@
                 height: auto !important;
                 background: none !important;
             }
+            /* px 단위 — Android 시스템 폰트 크기 설정에 영향받지 않음 */
             .cb-label {
-                font-size: 0.62rem !important;
+                font-size: 10px !important;
                 letter-spacing: 0.22em !important;
             }
             .cb-title {
-                font-size: 1.10rem !important;
+                font-size: 17px !important;
             }
             .cb-role {
-                font-size: 0.68rem !important;
+                font-size: 11px !important;
                 line-height: 1.55 !important;
             }
             .cb-role strong {
-                font-size: 1.02rem !important;
+                font-size: 16px !important;
                 color: #d8b4fe !important;
                 letter-spacing: 0.04em !important;
                 font-weight: 800 !important;
             }
             .cb-desc {
-                font-size: 0.72rem !important;
+                font-size: 11px !important;
                 line-height: 1.45 !important;
                 margin-top: 0 !important;
             }
@@ -1427,24 +1429,19 @@
                 startMusic();
             }
 
-            // 안드로이드 여부 판별 (진동/무음 감지 불가 → 버튼 전용)
-            const isAndroid = /android/i.test(navigator.userAgent);
+            // PC / iOS / Android 소리 모드 — 첫 번째 사용자 동작 시 자동 시작
+            // (Android 진동/무음 → 미디어 볼륨 0이면 들리지 않음, 수동 버튼으로 재시작 가능)
+            ['mousedown', 'touchstart', 'keydown'].forEach(ev =>
+                document.addEventListener(ev, onFirstInteraction, { once: true, passive: true })
+            );
 
-            if (!isAndroid) {
-                // PC / iOS — 첫 번째 사용자 동작 시 자동 시작
-                ['mousedown', 'touchstart', 'keydown'].forEach(ev =>
-                    document.addEventListener(ev, onFirstInteraction, { once: true, passive: true })
-                );
-
-                // 페이지 로드 즉시 시도 (일부 브라우저·벨소리 모드에서 바로 성공)
-                try {
-                    initCtx();
-                    ctx.resume().then(() => {
-                        if (ctx.state === 'running' && !autoStarted) onFirstInteraction();
-                    }).catch(() => {});
-                } catch(e) {}
-            }
-            // Android: 🎵 버튼 직접 눌러야만 시작 (진동/무음 감지 불가)
+            // 페이지 로드 즉시 시도 (벨소리·소리 모드에서 바로 성공)
+            try {
+                initCtx();
+                ctx.resume().then(() => {
+                    if (ctx.state === 'running' && !autoStarted) onFirstInteraction();
+                }).catch(() => {});
+            } catch(e) {}
         })();
     </script>
 </body>
