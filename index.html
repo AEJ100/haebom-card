@@ -1437,21 +1437,18 @@
                 startMusic();
             }
 
-            // 자동재생 + 무음/진동 감지:
-            // ctx.resume() 후 200ms 뒤에도 'running' 유지 → OS가 오디오 허용 (소리 모드) → 자동재생
-            // ctx.resume() 후 'suspended' 복귀 → OS가 오디오 포커스 거부 (무음/진동) → 버튼 대기
-            // iOS: 하드웨어 무음 스위치 → OS가 AudioContext 출력 자동 차단
-            // Android Samsung 일부: 무음/진동 → OS가 오디오 포커스 거부 → suspended 유지
+            // Android: 브라우저에서 진동/무음 모드 감지 불가 (미디어 채널은 ringer 설정 무관)
+            // → Android는 자동재생 완전 차단, 🎵 버튼으로만 재생
+            // iOS: 하드웨어 무음 스위치 → OS가 AudioContext 출력 자동 차단 (자동재생 안전)
+            // PC: 첫 상호작용 시 즉시 자동재생
+            const isAndroid = /android/i.test(navigator.userAgent);
+
             function tryAutoStart() {
-                if (autoStarted) return;
+                if (autoStarted || isAndroid) return;
                 try {
                     initCtx();
                     ctx.resume().then(() => {
-                        setTimeout(() => {
-                            if (ctx.state === 'running' && !autoStarted) {
-                                onFirstInteraction();
-                            }
-                        }, 200);
+                        if (ctx.state === 'running' && !autoStarted) onFirstInteraction();
                     }).catch(() => {});
                 } catch(e) {}
             }
