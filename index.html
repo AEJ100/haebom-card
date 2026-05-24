@@ -403,10 +403,12 @@
             letter-spacing: 0.32em;
             text-transform: uppercase;
             color: rgba(167, 139, 250, 0.68);
-            pointer-events: none;
+            cursor: pointer;
             white-space: nowrap;
             animation: hintPulse 2.4s ease-in-out infinite;
             text-shadow: 0 0 14px rgba(139, 92, 246, 0.45);
+            user-select: none;
+            -webkit-user-select: none;
         }
         .three-d-scene:hover .click-badge {
             color: rgba(210, 170, 255, 0.95);
@@ -990,6 +992,15 @@
             setTimeout(() => { isAnimating = false; }, 420);
         });
 
+        // ▲ Click 배지 클릭 → 카드 플립
+        const clickBadgeEl = document.querySelector('.click-badge');
+        if (clickBadgeEl) {
+            clickBadgeEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                flipCard();
+            });
+        }
+
         // ── Toast helper ──────────────────────────────────────────────────────
         const toast = document.getElementById('copy-toast');
         let toastTimer = null;
@@ -1142,7 +1153,6 @@
             let ctx = null, master = null;
             let playing = false, schedId = null;
             let nextBar = 0, barIdx = 0;
-            let autoStarted = false;
 
             const BPM    = 80;
             const beat   = 60 / BPM;   // 0.75s
@@ -1369,27 +1379,11 @@
             });
             document.body.appendChild(btn);
 
-            // ── 첫 번째 터치/클릭 시 자동 시작 ──────────────────────────────
-            function onFirstInteraction() {
-                if (autoStarted) return;
-                autoStarted = true;
-                startMusic();
-            }
-            ['touchstart','mousedown','keydown'].forEach(ev =>
-                document.addEventListener(ev, onFirstInteraction, { once: true, passive: true })
-            );
-
-            // ── 벨소리 모드: 페이지 로드 즉시 재생 시도 ──────────────────────
-            // AudioContext.resume()은 Promise를 반환:
-            //   - 벨소리 모드(또는 이전 상호작용 있음) → running → 즉시 음악 시작
-            //   - 진동/무음 모드(iOS 무음 스위치) → OS가 자동으로 음소거 처리
-            //   - 브라우저 자동재생 차단 → suspended → 첫 터치 때 시작
-            try {
-                initCtx();
-                ctx.resume().then(() => {
-                    if (ctx.state === 'running' && !autoStarted) onFirstInteraction();
-                }).catch(() => {});
-            } catch(e) {}
+            // ── 음악은 버튼 탭으로만 시작 ────────────────────────────────────
+            // 브라우저 웹 API로는 Android 무음/진동 모드를 감지할 수 없음.
+            // 자동 시작 시 무음 모드 사용자에게도 음악이 재생되므로 제거.
+            // → 하단 🎵 버튼을 눌러야만 음악이 시작됨.
+            // (iOS는 하드웨어 무음 스위치를 OS 레벨에서 자동 처리)
         })();
     </script>
 </body>
