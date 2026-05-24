@@ -394,8 +394,9 @@
             font-size: 0.48rem;
             font-family: 'Orbitron', sans-serif;
             letter-spacing: 0.2em;
-            color: rgba(167, 139, 250, 0.0);
+            color: rgba(167, 139, 250, 0.38);
             transition: color 0.5s ease, text-shadow 0.5s ease;
+            animation: hintPulse 2.6s ease-in-out infinite;
             pointer-events: none;
             z-index: 20;
             text-transform: uppercase;
@@ -403,9 +404,70 @@
             backface-visibility: hidden;
         }
         #portraitCard:hover .card-click-hint {
-            color: rgba(167, 139, 250, 0.8);
-            text-shadow: 0 0 10px rgba(139,92,246,0.7);
-            animation: hintBlink 1.8s ease-in-out infinite;
+            color: rgba(167, 139, 250, 0.95);
+            text-shadow: 0 0 12px rgba(139,92,246,0.9);
+            animation: hintBlink 1.4s ease-in-out infinite;
+        }
+
+        /* ── Holographic light sweep during flip ────────────────────────── */
+        @keyframes shineSweep {
+            0%   { background-position: 220% center; opacity: 0; }
+            14%  { opacity: 1; }
+            86%  { opacity: 1; }
+            100% { background-position: -80% center; opacity: 0; }
+        }
+        @keyframes hintPulse {
+            0%, 100% { opacity: 0.38; }
+            50%       { opacity: 0.75; }
+        }
+        .card-shine {
+            position: absolute;
+            inset: 0;
+            border-radius: 30px;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            background: linear-gradient(
+                115deg,
+                transparent 18%,
+                rgba(255, 255, 255, 0.09) 36%,
+                rgba(196, 132, 252, 0.28) 48%,
+                rgba(255, 255, 255, 0.09) 60%,
+                transparent 78%
+            );
+            background-size: 260% 100%;
+            background-position: 220% center;
+        }
+        /* Shine sweep fires whenever .is-flipping is present */
+        .portrait-card.is-flipping .card-shine {
+            animation: shineSweep 0.65s ease-in-out forwards;
+        }
+        /* Border glow surges during flip */
+        .portrait-card.is-flipping .layer-bg {
+            box-shadow:
+                0 30px 60px rgba(0, 0, 0, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.05),
+                0 0 44px rgba(168, 85, 247, 0.80),
+                0 0 88px rgba(139, 92, 246, 0.42);
+            transition: box-shadow 0.12s ease;
+        }
+        /* Glow intensifies during flip */
+        .portrait-card.is-flipping .layer-glow {
+            opacity: 1;
+            animation: none;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.60) 0%, transparent 70%);
+        }
+        /* Hover — card glows more, hint brightens */
+        #portraitCard:hover:not(.dragging) .layer-bg {
+            box-shadow:
+                0 30px 60px rgba(0, 0, 0, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.05),
+                0 0 28px rgba(168, 85, 247, 0.55);
+            transition: box-shadow 0.35s ease;
+        }
+        #portraitCard:hover:not(.dragging) .layer-glow {
+            opacity: 1;
+            animation: glowPulse 1.5s ease-in-out infinite;
         }
 
         /* Clipboard toast */
@@ -609,6 +671,7 @@
         <!-- 3D interactive portrait card -->
         <div class="three-d-scene z-30">
             <div id="portraitCard" class="portrait-card">
+                <div class="card-shine"></div>
                 <div class="layer-glow"></div>
                 <div class="layer-bg"></div>
                 <div class="layer-portrait">
@@ -618,7 +681,7 @@
                          class="portrait-img">
                 </div>
                 <div class="layer-glass-frame"></div>
-                <span class="card-click-hint">↻ TAP TO FLIP</span>
+                <span class="card-click-hint">✦ Click</span>
 
                 <!-- Back face — self-introduction -->
                 <div class="card-back">
@@ -629,7 +692,7 @@
                     <p class="cb-role">브랜드와 공간의 가치를 설계하는<br><strong style="font-size:1.08rem;color:#e2d9ff;letter-spacing:0.03em;">공간 브랜딩 디렉터</strong></p>
                     <div class="cb-divider"></div>
                     <p class="cb-desc">주거·상업공간 브랜딩을<br>기획합니다.</p>
-                    <span class="cb-hint">↻ TAP TO FLIP BACK</span>
+                    <span class="cb-hint">✦ Click</span>
                 </div>
             </div>
         </div>
@@ -756,6 +819,10 @@
 
         // 핵심 플립: 90도로 접기 → 콘텐츠 교체 → -90도 → 0도로 펼치기
         function doFlip() {
+            // 홀로그래픽 빛 효과 시작 (CSS animation은 클래스 추가로 트리거)
+            portraitCard.classList.add('is-flipping');
+            setTimeout(() => portraitCard.classList.remove('is-flipping'), 700);
+
             // 1단계: 90도로 접기 (카드가 edge-on — 내용 안 보임)
             portraitCard.style.transition = 'transform 0.30s cubic-bezier(0.4, 0, 1, 1)';
             portraitCard.style.transform  = 'rotateY(90deg)';
@@ -818,7 +885,9 @@
             const dx = e.clientX - cardDragStartX;
             isAnimating = true;
             if (Math.abs(dx) > 55) {
-                // 충분히 드래그 → fold/swap/unfold 플립
+                // 충분히 드래그 → fold/swap/unfold 플립 (빛 효과 포함)
+                portraitCard.classList.add('is-flipping');
+                setTimeout(() => portraitCard.classList.remove('is-flipping'), 600);
                 portraitCard.style.transition = 'transform 0.15s cubic-bezier(0.4, 0, 1, 1)';
                 portraitCard.style.transform  = 'rotateY(90deg)';
                 setTimeout(() => {
