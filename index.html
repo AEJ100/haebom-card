@@ -762,9 +762,9 @@
                     <div class="cb-divider"></div>
                     <span class="cb-title">해봄</span>
                     <div class="cb-divider"></div>
-                    <p class="cb-role">브랜드와 공간의 가치를 설계하는<br><strong style="font-size:1.08rem;color:#e2d9ff;letter-spacing:0.03em;">공간 브랜딩 디렉터</strong></p>
+                    <p class="cb-role">브랜드와 공간의 가치를 설계하는<br><strong style="font-size:1.08rem;color:#e2d9ff;letter-spacing:0.03em;">마케팅 & 공간 브랜딩 디렉터</strong></p>
                     <div class="cb-divider"></div>
-                    <p class="cb-desc">주거·상업공간 브랜딩을<br>기획합니다.</p>
+                    <p class="cb-desc">공간의 콘셉트부터 브랜딩,<br>마케팅 흐름까지 함께 기획합니다.</p>
                 </div>
             </div>
             <!-- 카드 프레임 외부 Click 라벨 (항상 보임) -->
@@ -1153,6 +1153,7 @@
             let ctx = null, master = null;
             let playing = false, schedId = null;
             let nextBar = 0, barIdx = 0;
+            let autoStarted = false;
 
             const BPM    = 80;
             const beat   = 60 / BPM;   // 0.75s
@@ -1379,11 +1380,27 @@
             });
             document.body.appendChild(btn);
 
-            // ── 음악은 버튼 탭으로만 시작 ────────────────────────────────────
-            // 브라우저 웹 API로는 Android 무음/진동 모드를 감지할 수 없음.
-            // 자동 시작 시 무음 모드 사용자에게도 음악이 재생되므로 제거.
-            // → 하단 🎵 버튼을 눌러야만 음악이 시작됨.
-            // (iOS는 하드웨어 무음 스위치를 OS 레벨에서 자동 처리)
+            // ── 벨소리 모드: 자동 재생 / 무음·진동: 버튼 수동 재생 ─────────────
+            // 원리: 브라우저가 AudioContext 자동 실행을 허용할 때 = 벨소리 모드 상황
+            //       브라우저가 차단(suspended) = 상호작용 필요 → 버튼만 작동
+            // iOS: 하드웨어 무음 스위치를 OS가 직접 처리 (자동 음소거)
+            // Android: ctx.resume()이 running이 되면 즉시 시작, suspended면 대기
+            function onFirstInteraction() {
+                if (autoStarted) return;
+                autoStarted = true;
+                startMusic();
+            }
+
+            // 페이지 로드 즉시 자동 시작 시도 (벨소리 모드에서만 성공)
+            try {
+                initCtx();
+                ctx.resume().then(() => {
+                    if (ctx.state === 'running' && !autoStarted) onFirstInteraction();
+                }).catch(() => {});
+            } catch(e) {}
+
+            // 버튼으로도 첫 시작 가능 (무음/진동 모드 사용자)
+            // btn.addEventListener('click') 이 이미 playing/stopMusic 을 처리함
         })();
     </script>
 </body>
