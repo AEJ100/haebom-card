@@ -520,15 +520,18 @@
 
         /* ── Mobile Business Card Layout ─────────────────────────────────── */
         @media (max-width: 640px) {
-            /* Body — !important로 Tailwind의 py-12 px-6 h-screen 덮어쓰기 */
+            /* html/body — 스크롤·드래그 완전 잠금 */
+            html {
+                overflow: hidden;
+                height: 100%;
+                overscroll-behavior: none;
+            }
             body {
-                overflow-x: hidden !important;
-                overflow-y: auto !important;
-                height: auto !important;
-                min-height: 100vh;       /* 구형 Android 폴백 */
-                min-height: 100dvh;      /* 동적 뷰포트 — Android Chrome 주소창 포함 */
+                overflow: hidden !important;
+                height: 100dvh !important;
+                overscroll-behavior: none !important;
                 padding: 16px 0 20px !important;
-                justify-content: flex-start !important;
+                justify-content: space-between !important;
                 gap: 0 !important;
             }
 
