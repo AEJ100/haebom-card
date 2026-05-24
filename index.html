@@ -1433,9 +1433,11 @@
                 startMusic();
             }
 
-            // Android: 진동/무음 구분 불가 → 🎵 버튼 수동 전용
+            // Android / Samsung 감지: 일반 모드(Android 포함) + 데스크톱 모드(SamsungBrowser만 포함)
+            // → 진동/무음 구분 불가 → 🎵 버튼 수동 전용
             // PC / iOS: 첫 번째 사용자 동작 시 자동 시작
-            const isAndroid = /android/i.test(navigator.userAgent);
+            const ua = navigator.userAgent;
+            const isAndroid = /(android|SamsungBrowser)/i.test(ua);
             if (!isAndroid) {
                 ['mousedown', 'touchstart', 'keydown'].forEach(ev =>
                     document.addEventListener(ev, onFirstInteraction, { once: true, passive: true })
