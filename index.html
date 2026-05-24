@@ -394,22 +394,23 @@
         }
         .click-badge {
             position: absolute;
-            bottom: -34px;
+            bottom: -40px;
             left: 50%;
             transform: translateX(-50%);
             font-family: 'Orbitron', sans-serif;
-            font-size: 0.44rem;
-            font-weight: 600;
-            letter-spacing: 0.35em;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.32em;
             text-transform: uppercase;
-            color: rgba(167, 139, 250, 0.50);
+            color: rgba(167, 139, 250, 0.68);
             pointer-events: none;
             white-space: nowrap;
             animation: hintPulse 2.4s ease-in-out infinite;
+            text-shadow: 0 0 14px rgba(139, 92, 246, 0.45);
         }
         .three-d-scene:hover .click-badge {
-            color: rgba(200, 160, 255, 0.90);
-            text-shadow: 0 0 10px rgba(139, 92, 246, 0.7);
+            color: rgba(210, 170, 255, 0.95);
+            text-shadow: 0 0 16px rgba(139, 92, 246, 0.85);
         }
 
         /* ── Holographic light + glow ring during flip ───────────────────── */
@@ -419,12 +420,13 @@
             88%  { opacity: 1; }
             100% { background-position: -80% center; opacity: 0; }
         }
+        /* radial-gradient 방식 — 가장자리가 투명으로 자연스럽게 페이드
+           overflow:hidden에 잘려도 딱딱한 경계선이 생기지 않음 */
         @keyframes glowRing {
-            0%   { box-shadow: 0 0  0px rgba(168, 85,247,0),   0 0   0px rgba(139,92,246,0);   border-color: transparent; }
-            25%  { box-shadow: 0 0 35px rgba(168, 85,247,0.9), 0 0  70px rgba(139,92,246,0.5); border-color: rgba(196,132,252,0.85); }
-            50%  { box-shadow: 0 0 50px rgba(168, 85,247,1.0), 0 0 100px rgba(139,92,246,0.7); border-color: rgba(220,160,255,1.00); }
-            75%  { box-shadow: 0 0 35px rgba(168, 85,247,0.9), 0 0  70px rgba(139,92,246,0.5); border-color: rgba(196,132,252,0.85); }
-            100% { box-shadow: 0 0  0px rgba(168, 85,247,0),   0 0   0px rgba(139,92,246,0);   border-color: transparent; }
+            0%   { opacity: 0;   transform: scale(0.88); }
+            28%  { opacity: 1;   transform: scale(1.00); }
+            70%  { opacity: 1;   transform: scale(1.00); }
+            100% { opacity: 0;   transform: scale(1.10); }
         }
         .card-shine {
             position: absolute;
@@ -447,14 +449,22 @@
         .portrait-card.is-flipping .card-shine {
             animation: shineSweep 0.72s ease-in-out forwards;
         }
-        /* 외부 발광 링 */
+        /* 외부 발광 — box-shadow 대신 radial-gradient
+           중심이 밝고 가장자리로 갈수록 투명 → 어디서 잘려도 경계선 없음 */
         .card-glow-ring {
             position: absolute;
-            inset: -10px;
-            border-radius: 44px;
-            border: 2px solid transparent;
+            inset: -70px;          /* 카드보다 넉넉히 크게 */
+            border-radius: 999px;  /* 완전히 둥근 형태 */
+            border: none;
             pointer-events: none;
             z-index: 60;
+            opacity: 0;
+            background: radial-gradient(ellipse at center,
+                rgba(168, 85, 247, 0.72)  0%,
+                rgba(139, 92, 246, 0.50) 22%,
+                rgba(139, 92, 246, 0.22) 48%,
+                rgba(139, 92, 246, 0.00) 72%
+            );
         }
         .portrait-card.is-flipping .card-glow-ring {
             animation: glowRing 0.72s ease-in-out forwards;
