@@ -73,6 +73,7 @@
         .three-d-scene {
             perspective: 1000px;
             transform-style: preserve-3d;
+            position: relative;  /* needed for .click-badge absolute positioning */
         }
 
         .portrait-card {
@@ -383,42 +384,47 @@
             0%, 100% { opacity: 0.55; }
             50%       { opacity: 1;    }
         }
-        .card-click-hint {
+        /* card-click-hint — 카드 내부에서는 숨김 (외부 click-badge로 대체) */
+        .card-click-hint { display: none; }
+
+        /* ── Click badge — 카드 프레임 아래 외부 라벨 ──────────────────── */
+        @keyframes hintPulse {
+            0%, 100% { opacity: 0.42; }
+            50%       { opacity: 0.85; }
+        }
+        .click-badge {
             position: absolute;
-            bottom: 16px;
+            bottom: -34px;
             left: 50%;
             transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.48rem;
             font-family: 'Orbitron', sans-serif;
-            letter-spacing: 0.2em;
-            color: rgba(167, 139, 250, 0.38);
-            transition: color 0.5s ease, text-shadow 0.5s ease;
-            animation: hintPulse 2.6s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 20;
+            font-size: 0.44rem;
+            font-weight: 600;
+            letter-spacing: 0.35em;
             text-transform: uppercase;
+            color: rgba(167, 139, 250, 0.50);
+            pointer-events: none;
             white-space: nowrap;
-            backface-visibility: hidden;
+            animation: hintPulse 2.4s ease-in-out infinite;
         }
-        #portraitCard:hover .card-click-hint {
-            color: rgba(167, 139, 250, 0.95);
-            text-shadow: 0 0 12px rgba(139,92,246,0.9);
-            animation: hintBlink 1.4s ease-in-out infinite;
+        .three-d-scene:hover .click-badge {
+            color: rgba(200, 160, 255, 0.90);
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.7);
         }
 
-        /* ── Holographic light sweep during flip ────────────────────────── */
+        /* ── Holographic light + glow ring during flip ───────────────────── */
         @keyframes shineSweep {
-            0%   { background-position: 220% center; opacity: 0; }
-            14%  { opacity: 1; }
-            86%  { opacity: 1; }
+            0%   { background-position: 240% center; opacity: 0; }
+            12%  { opacity: 1; }
+            88%  { opacity: 1; }
             100% { background-position: -80% center; opacity: 0; }
         }
-        @keyframes hintPulse {
-            0%, 100% { opacity: 0.38; }
-            50%       { opacity: 0.75; }
+        @keyframes glowRing {
+            0%   { box-shadow: 0 0  0px rgba(168, 85,247,0),   0 0   0px rgba(139,92,246,0);   border-color: transparent; }
+            25%  { box-shadow: 0 0 35px rgba(168, 85,247,0.9), 0 0  70px rgba(139,92,246,0.5); border-color: rgba(196,132,252,0.85); }
+            50%  { box-shadow: 0 0 50px rgba(168, 85,247,1.0), 0 0 100px rgba(139,92,246,0.7); border-color: rgba(220,160,255,1.00); }
+            75%  { box-shadow: 0 0 35px rgba(168, 85,247,0.9), 0 0  70px rgba(139,92,246,0.5); border-color: rgba(196,132,252,0.85); }
+            100% { box-shadow: 0 0  0px rgba(168, 85,247,0),   0 0   0px rgba(139,92,246,0);   border-color: transparent; }
         }
         .card-shine {
             position: absolute;
@@ -428,36 +434,38 @@
             z-index: 50;
             opacity: 0;
             background: linear-gradient(
-                115deg,
-                transparent 18%,
-                rgba(255, 255, 255, 0.09) 36%,
-                rgba(196, 132, 252, 0.28) 48%,
-                rgba(255, 255, 255, 0.09) 60%,
-                transparent 78%
+                112deg,
+                transparent 14%,
+                rgba(255, 255, 255, 0.18) 33%,
+                rgba(210, 140, 255, 0.55) 48%,
+                rgba(255, 255, 255, 0.18) 63%,
+                transparent 82%
             );
-            background-size: 260% 100%;
-            background-position: 220% center;
+            background-size: 270% 100%;
+            background-position: 240% center;
         }
-        /* Shine sweep fires whenever .is-flipping is present */
         .portrait-card.is-flipping .card-shine {
-            animation: shineSweep 0.65s ease-in-out forwards;
+            animation: shineSweep 0.72s ease-in-out forwards;
         }
-        /* Border glow surges during flip */
-        .portrait-card.is-flipping .layer-bg {
-            box-shadow:
-                0 30px 60px rgba(0, 0, 0, 0.6),
-                inset 0 0 20px rgba(255, 255, 255, 0.05),
-                0 0 44px rgba(168, 85, 247, 0.80),
-                0 0 88px rgba(139, 92, 246, 0.42);
-            transition: box-shadow 0.12s ease;
+        /* 외부 발광 링 */
+        .card-glow-ring {
+            position: absolute;
+            inset: -10px;
+            border-radius: 44px;
+            border: 2px solid transparent;
+            pointer-events: none;
+            z-index: 60;
         }
-        /* Glow intensifies during flip */
+        .portrait-card.is-flipping .card-glow-ring {
+            animation: glowRing 0.72s ease-in-out forwards;
+        }
+        /* 플립 중 내부 글로우 */
         .portrait-card.is-flipping .layer-glow {
             opacity: 1;
             animation: none;
-            background: radial-gradient(circle, rgba(168, 85, 247, 0.60) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.70) 0%, transparent 70%);
         }
-        /* Hover — card glows more, hint brightens */
+        /* Hover — 카드 외곽 글로우 강화 */
         #portraitCard:hover:not(.dragging) .layer-bg {
             box-shadow:
                 0 30px 60px rgba(0, 0, 0, 0.6),
@@ -671,7 +679,10 @@
         <!-- 3D interactive portrait card -->
         <div class="three-d-scene z-30">
             <div id="portraitCard" class="portrait-card">
+                <!-- 홀로그래픽 빛 오버레이 -->
                 <div class="card-shine"></div>
+                <!-- 외부 발광 링 (플립 시 활성화) -->
+                <div class="card-glow-ring"></div>
                 <div class="layer-glow"></div>
                 <div class="layer-bg"></div>
                 <div class="layer-portrait">
@@ -681,7 +692,7 @@
                          class="portrait-img">
                 </div>
                 <div class="layer-glass-frame"></div>
-                <span class="card-click-hint">✦ Click</span>
+                <!-- card-click-hint: CSS로 hidden, JS frontLayers에서도 제거 -->
 
                 <!-- Back face — self-introduction -->
                 <div class="card-back">
@@ -695,6 +706,8 @@
                     <span class="cb-hint">✦ Click</span>
                 </div>
             </div>
+            <!-- 카드 프레임 외부 Click 라벨 (항상 보임) -->
+            <div class="click-badge">✦ &nbsp;Click</div>
         </div>
 
         <!-- ── LEFT SIDE: Phone / Email / Document ── -->
@@ -795,14 +808,13 @@
         let cardDragActive = false, cardDragDid = false;
         let cardDragStartX = 0, cardDragStartY = 0;
 
-        // 앞면/뒷면 레이어 참조
+        // 앞면/뒷면 레이어 참조 (card-click-hint는 CSS로 hidden 처리, JS에서 제외)
         const cardBack    = portraitCard.querySelector('.card-back');
         const frontLayers = [
             portraitCard.querySelector('.layer-glow'),
             portraitCard.querySelector('.layer-bg'),
             portraitCard.querySelector('.layer-portrait'),
             portraitCard.querySelector('.layer-glass-frame'),
-            portraitCard.querySelector('.card-click-hint'),
         ];
 
         // 초기 상태 — 뒷면 숨김
@@ -817,28 +829,28 @@
             cardBack.style.display = 'flex';
         }
 
-        // 핵심 플립: 90도로 접기 → 콘텐츠 교체 → -90도 → 0도로 펼치기
+        // 핵심 플립: 빠르게 접기 → 콘텐츠 교체 → 천천히 펼치기 (빠르게→천천히)
         function doFlip() {
-            // 홀로그래픽 빛 효과 시작 (CSS animation은 클래스 추가로 트리거)
+            // 홀로그래픽 빛 + 글로우 링 시작
             portraitCard.classList.add('is-flipping');
-            setTimeout(() => portraitCard.classList.remove('is-flipping'), 700);
+            setTimeout(() => portraitCard.classList.remove('is-flipping'), 760);
 
-            // 1단계: 90도로 접기 (카드가 edge-on — 내용 안 보임)
-            portraitCard.style.transition = 'transform 0.30s cubic-bezier(0.4, 0, 1, 1)';
+            // 1단계: 빠르게 90도로 접기 (강한 ease-in → 카드가 홱 돌아감)
+            portraitCard.style.transition = 'transform 0.15s cubic-bezier(0.55, 0, 1, 1)';
             portraitCard.style.transform  = 'rotateY(90deg)';
             setTimeout(() => {
-                // 2단계: 보이지 않는 상태에서 콘텐츠 교체
+                // 2단계: 안 보이는 상태에서 콘텐츠 교체
                 isFlipped = !isFlipped;
                 if (isFlipped) showBack(); else showFront();
-                // 3단계: 순간적으로 -90도로 이동 (여전히 edge-on)
+                // 3단계: 순간 -90도로 점프 (여전히 edge-on)
                 portraitCard.style.transition = 'none';
                 portraitCard.style.transform  = 'rotateY(-90deg)';
                 portraitCard.offsetHeight;   // 강제 reflow
-                // 4단계: -90도 → 0도로 펼치기 (새 면 등장)
-                portraitCard.style.transition = 'transform 0.30s cubic-bezier(0, 0, 0.6, 1)';
+                // 4단계: 천천히 펼치기 (강한 ease-out → 점점 느려짐)
+                portraitCard.style.transition = 'transform 0.52s cubic-bezier(0, 0, 0.12, 1)';
                 portraitCard.style.transform  = 'rotateY(0deg)';
-                setTimeout(() => { isAnimating = false; }, 320);
-            }, 310);
+                setTimeout(() => { isAnimating = false; }, 540);
+            }, 140);
         }
 
         function flipCard() {
@@ -859,13 +871,13 @@
             portraitCard.setPointerCapture(e.pointerId);
         });
 
-        // 드래그 중 — 항상 0 기준 (display로 면 제어하므로 항상 정면이 0deg)
+        // 드래그 중 — ±85°로 클램프 (90° 넘어가면 카드가 뒤집혀 내용이 사라지는 문제 방지)
         portraitCard.addEventListener('pointermove', (e) => {
             if (!cardDragActive) return;
             const dx = e.clientX - cardDragStartX;
             const dy = e.clientY - cardDragStartY;
             if (Math.abs(dx) > 4 || Math.abs(dy) > 4) cardDragDid = true;
-            const tiltY = dx * 0.45;
+            const tiltY = Math.max(-85, Math.min(85, dx * 0.45));
             const tiltX = Math.max(-28, Math.min(28, -dy * 0.4));
             portraitCard.style.transform = `rotateY(${tiltY}deg) rotateX(${tiltX}deg)`;
         });
