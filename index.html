@@ -1089,6 +1089,7 @@
 
             icon.addEventListener('pointermove', (e) => {
                 if (!active) return;
+                if (window.innerWidth > 640) return; // PC: 드래그 비활성화
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
                 if (Math.abs(dx) > 6 || Math.abs(dy) > 6) didDrag = true;

@@ -10,15 +10,15 @@
     <meta property="og:url"          content="https://aej100.github.io/haebom-card/hyoyoung/">
     <meta property="og:title"        content="효영의 기록실">
     <meta property="og:description"  content="정직한 가치를 짓는 공간 디렉터">
-    <meta property="og:image"        content="https://aej100.github.io/haebom-card/hyoyoung/hyoyoung-profile.jpg">
+    <meta property="og:image"        content="https://aej100.github.io/haebom-card/hyoyoung/hyoyoung-profile.webp">
     <meta property="og:image:width"  content="800">
     <meta property="og:image:height" content="800">
     <meta name="twitter:card"        content="summary_large_image">
     <meta name="twitter:title"       content="효영의 기록실">
     <meta name="twitter:description" content="정직한 가치를 짓는 공간 디렉터">
-    <meta name="twitter:image"       content="https://aej100.github.io/haebom-card/hyoyoung/hyoyoung-profile.jpg">
+    <meta name="twitter:image"       content="https://aej100.github.io/haebom-card/hyoyoung/hyoyoung-profile.webp">
     <meta name="description"         content="정직한 가치를 짓는 공간 디렉터">
-    <link rel="icon" type="image/png" href="hyoyoung-profile.jpg">
+    <link rel="icon" type="image/png" href="hyoyoung-profile.webp">
 
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -767,7 +767,7 @@
                 <div class="layer-glow"></div>
                 <div class="layer-bg"></div>
                 <div class="layer-portrait">
-                    <img src="hyoyoung-profile.jpg"
+                    <img src="hyoyoung-profile.webp"
                          alt="Hyoyoung Portrait"
                          class="portrait-img">
                 </div>
@@ -1088,6 +1088,7 @@
 
             icon.addEventListener('pointermove', (e) => {
                 if (!active) return;
+                if (window.innerWidth > 640) return; // PC: 드래그 비활성화
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
                 if (Math.abs(dx) > 6 || Math.abs(dy) > 6) didDrag = true;
